@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -48,6 +50,7 @@ fun PhotosView(
     val viewState by viewModel.viewState.collectAsStateWithLifecycle()
     val searchViewState by viewModel.searchViewState.collectAsStateWithLifecycle()
     val paginationHasError by viewModel.paginationHasError.collectAsStateWithLifecycle()
+    val isPaginating by viewModel.isPaginating.collectAsStateWithLifecycle()
     val textFieldState = rememberTextFieldState()
     var searchBarExpanded by rememberSaveable { mutableStateOf(false) }
     var isSearching by rememberSaveable { mutableStateOf(false) }
@@ -114,6 +117,7 @@ fun PhotosView(
             Content(
                 viewState = searchViewState,
                 contentPadding = null,
+                isPaginating = isPaginating,
                 onClick = { onPhotoClick(it) },
                 onErrorButtonClick = { viewModel.search(textFieldState.text.toString()) },
                 onPagination = { viewModel.searchForMore(textFieldState.text.toString()) }
@@ -127,6 +131,7 @@ fun PhotosView(
             Content(
                 viewState = if (isSearching) searchViewState else viewState,
                 contentPadding = contentPadding,
+                isPaginating = isPaginating,
                 onClick = { onPhotoClick(it) },
                 onErrorButtonClick = {
                     if (isSearching) {
@@ -151,6 +156,7 @@ fun PhotosView(
 private fun Content(
     viewState: PhotosViewModel.ViewState?,
     contentPadding: PaddingValues?,
+    isPaginating: Boolean,
     onClick: (FlickrPhoto) -> Unit,
     onErrorButtonClick: () -> Unit,
     onPagination: () -> Unit
@@ -179,6 +185,19 @@ private fun Content(
                         LaunchedEffect(index) {
                             if (index >= (viewState.photos.size - 5)) {
                                 onPagination()
+                            }
+                        }
+                    }
+
+                    if (isPaginating) {
+                        item(
+                            span = { GridItemSpan(maxLineSpan) }
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(Modifier.padding(16.dp))
                             }
                         }
                     }

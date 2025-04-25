@@ -30,6 +30,8 @@ class PhotosViewModel @Inject constructor(
     val searchViewState: StateFlow<ViewState?> = _searchViewState.asStateFlow()
     private val _paginationHasError = MutableStateFlow(false)
     val paginationHasError: StateFlow<Boolean> = _paginationHasError.asStateFlow()
+    private val _isPaginating = MutableStateFlow(false)
+    val isPaginating: StateFlow<Boolean> = _isPaginating
 
     var didInit = false
     private var isLoadingMore = false
@@ -57,6 +59,7 @@ class PhotosViewModel @Inject constructor(
             (_viewState.value as? ViewState.Content)?.let { state ->
                 state.nextPage?.let { nextPage ->
                     isLoadingMore = true
+                    _isPaginating.update { true }
                     viewModelScope.launch {
                         try {
                             Log.d("hasan", "getting page $nextPage of recent photos")
@@ -71,6 +74,7 @@ class PhotosViewModel @Inject constructor(
                             _paginationHasError.update { true }
                         } finally {
                             isLoadingMore = false
+                            _isPaginating.update { false }
                         }
                     }
                 }
@@ -96,6 +100,7 @@ class PhotosViewModel @Inject constructor(
             (_searchViewState.value as? ViewState.Content)?.let { state ->
                 state.nextPage?.let { nextPage ->
                     isLoadingMoreSearch = true
+                    _isPaginating.update { true }
                     viewModelScope.launch {
                         try {
                             Log.d("hasan", "getting page $nextPage of search ($query)")
@@ -110,6 +115,7 @@ class PhotosViewModel @Inject constructor(
                             _paginationHasError.update { true }
                         } finally {
                             isLoadingMoreSearch = false
+                            _isPaginating.update { false }
                         }
                     }
                 }
