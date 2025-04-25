@@ -41,7 +41,8 @@ class FlickrApiImpl @Inject constructor(
     }
 
     private fun buildUrlForMethod(method: Method): String {
-        var url = "$BASE_API_URL?method=${method.value}&api_key=$API_KEY&format=json&nojsoncallback=1"
+        var url =
+            "$BASE_API_URL?method=${method.value}&api_key=$API_KEY&format=json&nojsoncallback=1&extras=date_upload"
         val extraParams = method.getExtraParams()
         if (extraParams.isNotEmpty()) {
             url += "&$extraParams"
