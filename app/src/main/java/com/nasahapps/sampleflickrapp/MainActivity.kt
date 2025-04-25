@@ -6,11 +6,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.nasahapps.sampleflickrapp.ui.theme.SampleAppTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -23,10 +22,18 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SampleAppTheme {
+                val snackbarHostState = remember { SnackbarHostState() }
+
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
+                    snackbarHost = {
+                        SnackbarHost(snackbarHostState)
+                    }
                 ) { innerPadding ->
-                    MainView(contentPadding = innerPadding)
+                    MainView(
+                        contentPadding = innerPadding,
+                        snackbarHostState = snackbarHostState
+                    )
                 }
             }
         }

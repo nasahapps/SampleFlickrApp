@@ -18,6 +18,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -39,10 +42,12 @@ import coil3.compose.AsyncImage
 fun MainView(
     modifier: Modifier = Modifier,
     viewModel: MainViewModel = viewModel(),
-    contentPadding: PaddingValues
+    contentPadding: PaddingValues,
+    snackbarHostState: SnackbarHostState
 ) {
     val viewState by viewModel.viewState.collectAsStateWithLifecycle()
     val searchViewState by viewModel.searchViewState.collectAsStateWithLifecycle()
+    val paginationHasError by viewModel.paginationHasError.collectAsStateWithLifecycle()
     val textFieldState = rememberTextFieldState()
     var searchBarExpanded by rememberSaveable { mutableStateOf(false) }
     var isSearching by rememberSaveable { mutableStateOf(false) }
@@ -50,6 +55,22 @@ fun MainView(
     LaunchedEffect(Unit) {
         if (!viewModel.didInit) {
             viewModel.getRecentPhotos()
+        }
+    }
+
+    LaunchedEffect(paginationHasError) {
+        if (paginationHasError) {
+            val result = snackbarHostState.showSnackbar(
+                message = "Pagination error",
+                duration = SnackbarDuration.Short
+            )
+            when (result) {
+                SnackbarResult.Dismissed -> {
+                    viewModel.resetPaginationError()
+                }
+
+                else -> {}
+            }
         }
     }
 

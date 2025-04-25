@@ -28,6 +28,8 @@ class MainViewModel @Inject constructor(
     val viewState: StateFlow<ViewState> = _viewState.asStateFlow()
     private val _searchViewState = MutableStateFlow<ViewState?>(null)
     val searchViewState: StateFlow<ViewState?> = _searchViewState.asStateFlow()
+    private val _paginationHasError = MutableStateFlow(false)
+    val paginationHasError: StateFlow<Boolean> = _paginationHasError.asStateFlow()
 
     var didInit = false
     private var isLoadingMore = false
@@ -66,7 +68,7 @@ class MainViewModel @Inject constructor(
                             }
                         } catch (e: Throwable) {
                             Log.e("hasan", "Error fetching more recent photos", e)
-                            // TODO: Show snackbar
+                            _paginationHasError.update { true }
                         } finally {
                             isLoadingMore = false
                         }
@@ -105,7 +107,7 @@ class MainViewModel @Inject constructor(
                             }
                         } catch (e: Throwable) {
                             Log.e("hasan", "Error fetching more for search", e)
-                            // TODO: Show snackbar
+                            _paginationHasError.update { true }
                         } finally {
                             isLoadingMoreSearch = false
                         }
@@ -113,6 +115,10 @@ class MainViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun resetPaginationError() {
+        _paginationHasError.update { false }
     }
 
 }
