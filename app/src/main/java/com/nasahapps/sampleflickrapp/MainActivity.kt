@@ -13,8 +13,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.ui.Modifier
 import com.nasahapps.sampleflickrapp.ui.theme.SampleAppTheme
+import dagger.hilt.android.AndroidEntryPoint
 
 @ExperimentalMaterial3Api
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,7 +37,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 ) { innerPadding ->
-
+                    MainView(contentPadding = innerPadding)
                 }
             }
         }
