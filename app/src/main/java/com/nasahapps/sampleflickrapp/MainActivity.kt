@@ -25,17 +25,6 @@ class MainActivity : ComponentActivity() {
             SampleAppTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                    topBar = {
-                        TopAppBar(
-                            colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                titleContentColor = MaterialTheme.colorScheme.primary
-                            ),
-                            title = {
-                                Text("Flickr App")
-                            }
-                        )
-                    }
                 ) { innerPadding ->
                     MainView(contentPadding = innerPadding)
                 }
