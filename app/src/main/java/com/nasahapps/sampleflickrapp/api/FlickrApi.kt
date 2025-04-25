@@ -6,8 +6,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 interface FlickrApi {
-    suspend fun getRecentPhotos(): PhotosResponse
-    suspend fun searchForPhotos(query: String): PhotosResponse
+    suspend fun getRecentPhotos(page: Int = 1): PhotosResponse
+    suspend fun searchForPhotos(query: String, page: Int = 1): PhotosResponse
 }
 
 @Singleton
@@ -26,13 +26,16 @@ class FlickrApiImpl @Inject constructor(
             return ""
         }
 
-        data object RecentPhotos : Method {
+        class RecentPhotos(val page: Int) : Method {
             override val value = "flickr.photos.getRecent"
+            override fun getExtraParams(): String {
+                return "page=$page"
+            }
         }
-        class Search(val query: String) : Method {
+        class Search(val query: String, val page: Int) : Method {
             override val value = "flickr.photos.search"
             override fun getExtraParams(): String {
-                return "text=$query"
+                return "text=$query&page=$page"
             }
         }
     }
@@ -46,16 +49,16 @@ class FlickrApiImpl @Inject constructor(
         return url
     }
 
-    override suspend fun getRecentPhotos(): PhotosResponse = withContext(Dispatchers.IO) {
+    override suspend fun getRecentPhotos(page: Int): PhotosResponse = withContext(Dispatchers.IO) {
         apiClient.request(
-            url = buildUrlForMethod(Method.RecentPhotos),
+            url = buildUrlForMethod(Method.RecentPhotos(page)),
             responseType = PhotosResponse::class
         )
     }
 
-    override suspend fun searchForPhotos(query: String): PhotosResponse = withContext(Dispatchers.IO) {
+    override suspend fun searchForPhotos(query: String, page: Int): PhotosResponse = withContext(Dispatchers.IO) {
         apiClient.request(
-            url = buildUrlForMethod(Method.Search(query)),
+            url = buildUrlForMethod(Method.Search(query, page)),
             responseType = PhotosResponse::class
         )
     }

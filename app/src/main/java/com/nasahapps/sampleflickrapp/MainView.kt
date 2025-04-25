@@ -1,6 +1,6 @@
 package com.nasahapps.sampleflickrapp
 
-import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
@@ -41,9 +42,10 @@ fun MainView(
     contentPadding: PaddingValues
 ) {
     val viewState by viewModel.viewState.collectAsStateWithLifecycle()
-    val searchPhotos by viewModel.searchPhotos.collectAsStateWithLifecycle()
+    val searchViewState by viewModel.searchViewState.collectAsStateWithLifecycle()
     val textFieldState = rememberTextFieldState()
     var searchBarExpanded by rememberSaveable { mutableStateOf(false) }
+    var isSearching by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         if (!viewModel.didInit) {
@@ -53,6 +55,7 @@ fun MainView(
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(24.dp),
         modifier = modifier
     ) {
         SearchBar(
@@ -63,13 +66,19 @@ fun MainView(
                     onSearch = {
                         viewModel.search(textFieldState.text.toString())
                         searchBarExpanded = false
+                        isSearching =
+                            textFieldState.text.isNotBlank() && textFieldState.text.isNotEmpty()
                     },
                     expanded = searchBarExpanded,
                     onExpandedChange = { searchBarExpanded = it },
                     placeholder = { Text("Search") },
                     trailingIcon = {
                         if (searchBarExpanded) {
-                            TextButton(onClick = { searchBarExpanded = false }) {
+                            TextButton(onClick = {
+                                textFieldState.edit { replace(0, length, "") }
+                                searchBarExpanded = false
+                                isSearching = false
+                            }) {
                                 Icon(
                                     Icons.Default.Close,
                                     contentDescription = null
@@ -82,58 +91,90 @@ fun MainView(
             expanded = searchBarExpanded,
             onExpandedChange = { searchBarExpanded = it }
         ) {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3)
-            ) {
-                items(searchPhotos) { photo ->
-                    Box(Modifier.aspectRatio(1f)) {
-                        AsyncImage(
-                            model = "https://live.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}.jpg",
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
-                }
-            }
+            Content(
+                viewState = searchViewState,
+                contentPadding = null,
+                onErrorButtonClick = { viewModel.search(textFieldState.text.toString()) },
+                onPagination = { viewModel.searchForMore(textFieldState.text.toString()) }
+            )
         }
 
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            when (val state = viewState) {
-                is MainViewModel.ViewState.Loading -> {
-                    CircularProgressIndicator()
+            Content(
+                viewState = if (isSearching) searchViewState else viewState,
+                contentPadding = contentPadding,
+                onErrorButtonClick = {
+                    if (isSearching) {
+                        viewModel.search(textFieldState.text.toString())
+                    } else {
+                        viewModel.getRecentPhotos()
+                    }
+                },
+                onPagination = {
+                    if (isSearching) {
+                        viewModel.searchForMore(textFieldState.text.toString())
+                    } else {
+                        viewModel.getMoreRecentPhotos()
+                    }
                 }
+            )
+        }
+    }
+}
 
-                is MainViewModel.ViewState.Content -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(3),
-                        contentPadding = contentPadding
-                    ) {
-                        items(state.photos) { photo ->
-                            Box(Modifier.aspectRatio(1f)) {
-                                AsyncImage(
-                                    model = "https://live.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}.jpg",
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
+@Composable
+private fun Content(
+    viewState: MainViewModel.ViewState?,
+    contentPadding: PaddingValues?,
+    onErrorButtonClick: () -> Unit,
+    onPagination: () -> Unit
+) {
+    Box(Modifier.fillMaxSize()) {
+        when (viewState) {
+            is MainViewModel.ViewState.Loading -> {
+                CircularProgressIndicator(Modifier.align(Alignment.Center))
+            }
+
+            is MainViewModel.ViewState.Content -> {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    contentPadding = contentPadding?.copy(top = 0.dp) ?: PaddingValues(0.dp)
+                ) {
+                    itemsIndexed(viewState.photos) { index, photo ->
+                        Box(Modifier.aspectRatio(1f)) {
+                            AsyncImage(
+                                model = "https://live.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}.jpg",
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+
+                        LaunchedEffect(index) {
+                            if (index >= (viewState.photos.size - 5)) {
+                                onPagination()
                             }
                         }
                     }
                 }
+            }
 
-                is MainViewModel.ViewState.Error -> {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Error fetching recent photos")
-                        Button(onClick = { viewModel.getRecentPhotos() }) {
-                            Text("Retry")
-                        }
+            is MainViewModel.ViewState.Error -> {
+                Column(
+                    modifier = Modifier.align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("Error fetching photos")
+                    Button(onClick = onErrorButtonClick) {
+                        Text("Retry")
                     }
                 }
             }
+
+            else -> {}
         }
     }
 }
