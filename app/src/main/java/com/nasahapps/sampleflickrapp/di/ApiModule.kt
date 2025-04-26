@@ -17,14 +17,21 @@ object ApiModule {
 
     @Singleton
     @Provides
-    fun provideHttpClient(): HttpClient {
+    fun provideHttpClient(jsonParser: Json): HttpClient {
         return HttpClient(OkHttp) {
             expectSuccess = true
             install(ContentNegotiation) {
-                json(Json {
-                    ignoreUnknownKeys = true
-                })
+                json(jsonParser)
             }
+        }
+    }
+
+    @Singleton
+    @Provides
+    fun provideJsonParser(): Json {
+        return Json {
+            ignoreUnknownKeys = true
+            isLenient = true
         }
     }
 

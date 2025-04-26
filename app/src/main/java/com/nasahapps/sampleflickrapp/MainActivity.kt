@@ -13,10 +13,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.nasahapps.sampleflickrapp.ui.theme.SampleAppTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.serialization.json.Json
+import javax.inject.Inject
 
 @ExperimentalMaterial3Api
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var json: Json
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -32,7 +38,8 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     MainView(
                         contentPadding = innerPadding,
-                        snackbarHostState = snackbarHostState
+                        snackbarHostState = snackbarHostState,
+                        jsonParser = json
                     )
                 }
             }
