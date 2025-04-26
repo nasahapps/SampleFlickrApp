@@ -4,12 +4,13 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
+import androidx.navigation.navArgument
 import com.nasahapps.sampleflickrapp.api.FlickrPhoto
-import kotlin.reflect.typeOf
+import kotlinx.serialization.json.Json
 
 @Composable
 fun MainView(
@@ -21,24 +22,37 @@ fun MainView(
 
     NavHost(
         navController = navController,
-        startDestination = NavDestinations.Photos,
+        startDestination = NavDestination.Photos.route,
         modifier = modifier,
     ) {
-        composable<NavDestinations.Photos> {
+        composable(NavDestination.Photos.route) {
             PhotosView(
                 contentPadding = contentPadding,
                 snackbarHostState = snackbarHostState,
                 onPhotoClick = {
-                    navController.navigate(route = NavDestinations.PhotoDetails(it))
+                    val route = NavDestination.PhotoDetails.route
+                        .replace(
+                            "{${NavDestination.PhotoDetails.argPhoto}}",
+                            Json.encodeToString(it)
+                        )
+                    navController.navigate(route)
                 }
             )
         }
-        composable<NavDestinations.PhotoDetails>(
-            typeMap = mapOf(typeOf<FlickrPhoto>() to FlickrPhotoType)
+        composable(
+            route = NavDestination.PhotoDetails.route,
+            arguments = listOf(
+                navArgument(NavDestination.PhotoDetails.argPhoto) {
+                    type = NavType.StringType
+                    nullable = false
+                }
+            )
         ) { backstackEntry ->
-            val photo = backstackEntry.toRoute<NavDestinations.PhotoDetails>()
+            val photo = Json.decodeFromString<FlickrPhoto>(
+                backstackEntry.arguments?.getString(NavDestination.PhotoDetails.argPhoto) ?: "{}"
+            )
             PhotoDetailsView(
-                photo = photo.photo,
+                photo = photo!!,
                 contentPadding = contentPadding
             )
         }

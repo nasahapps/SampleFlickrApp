@@ -4,15 +4,19 @@ import android.os.Bundle
 import androidx.core.os.BundleCompat
 import androidx.navigation.NavType
 import com.nasahapps.sampleflickrapp.api.FlickrPhoto
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-object NavDestinations {
-    @Serializable
-    object Photos
+sealed class NavDestination {
+    object Photos : NavDestination() {
+        val route = "photos"
+    }
 
-    @Serializable
-    data class PhotoDetails(val photo: FlickrPhoto)
+    data class PhotoDetails(val photo: FlickrPhoto) : NavDestination() {
+        companion object {
+            val argPhoto = "photo"
+            val route = "photo/{${argPhoto}}"
+        }
+    }
 }
 
 val FlickrPhotoType = object : NavType<FlickrPhoto>(false) {
