@@ -39,3 +39,13 @@ fun PaddingValues.adding(
         this.calculateBottomPadding() + bottom
     )
 }
+
+@Composable
+fun PaddingValues.calculateStartPadding(): Dp {
+    return this.calculateStartPadding(LocalLayoutDirection.current)
+}
+
+@Composable
+fun PaddingValues.calculateEndPadding(): Dp {
+    return this.calculateEndPadding(LocalLayoutDirection.current)
+}

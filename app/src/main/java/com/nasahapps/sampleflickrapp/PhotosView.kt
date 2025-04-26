@@ -30,14 +30,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nasahapps.sampleflickrapp.api.FlickrPhoto
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,10 +59,20 @@ fun PhotosView(
     val textFieldState = rememberTextFieldState()
     var searchBarExpanded by rememberSaveable { mutableStateOf(false) }
     var isSearching by rememberSaveable { mutableStateOf(false) }
+    var isSearchBarFocusable by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(Unit) {
         if (!viewModel.didInit) {
             viewModel.getRecentPhotos()
+        }
+    }
+
+    LaunchedEffect(isSearchBarFocusable) {
+        if (!isSearchBarFocusable) {
+            delay(500)
+            isSearchBarFocusable = true
         }
     }
 
@@ -77,6 +92,13 @@ fun PhotosView(
         }
     }
 
+    LaunchedEffect(searchBarExpanded) {
+        if (!searchBarExpanded) {
+            focusManager.clearFocus()
+            keyboardController?.hide()
+        }
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(24.dp),
@@ -89,6 +111,7 @@ fun PhotosView(
                     onSearch = {
                         viewModel.search(textFieldState.text.toString())
                         searchBarExpanded = false
+                        isSearchBarFocusable = false
                         isSearching =
                             textFieldState.text.isNotBlank() && textFieldState.text.isNotEmpty()
                     },
@@ -101,6 +124,8 @@ fun PhotosView(
                                 textFieldState.edit { replace(0, length, "") }
                                 searchBarExpanded = false
                                 isSearching = false
+                                isSearchBarFocusable = false
+                                viewModel.clearSearch()
                             }) {
                                 Icon(
                                     Icons.Default.Close,
@@ -112,7 +137,14 @@ fun PhotosView(
                 )
             },
             expanded = searchBarExpanded,
-            onExpandedChange = { searchBarExpanded = it }
+            onExpandedChange = { searchBarExpanded = it },
+            modifier = Modifier
+                .focusProperties { canFocus = isSearchBarFocusable }
+                .padding(
+                    top = 8.dp,
+                    start = contentPadding.calculateStartPadding(),
+                    end = contentPadding.calculateEndPadding()
+                )
         ) {
             Content(
                 viewState = searchViewState,

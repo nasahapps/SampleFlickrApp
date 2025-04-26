@@ -82,6 +82,10 @@ class PhotosViewModel @Inject constructor(
         }
     }
 
+    fun clearSearch() {
+        _searchViewState.update { ViewState.Content(emptyList(), null, 0) }
+    }
+
     fun search(query: String) {
         if (query.isNotBlank()) {
             _searchViewState.update { ViewState.Loading }

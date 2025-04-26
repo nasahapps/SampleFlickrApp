@@ -1,6 +1,7 @@
 package com.nasahapps.sampleflickrapp
 
 import android.os.Bundle
+import androidx.core.os.BundleCompat
 import androidx.navigation.NavType
 import com.nasahapps.sampleflickrapp.api.FlickrPhoto
 import kotlinx.serialization.Serializable
@@ -16,7 +17,7 @@ object NavDestinations {
 
 val FlickrPhotoType = object : NavType<FlickrPhoto>(false) {
     override fun get(bundle: Bundle, key: String): FlickrPhoto? {
-        return bundle.getString(key)?.let<String, FlickrPhoto>(Json::decodeFromString)
+        return BundleCompat.getParcelable(bundle, key, FlickrPhoto::class.java)
     }
 
     override fun parseValue(value: String): FlickrPhoto {
@@ -28,6 +29,6 @@ val FlickrPhotoType = object : NavType<FlickrPhoto>(false) {
     }
 
     override fun put(bundle: Bundle, key: String, value: FlickrPhoto) {
-        bundle.putString(key, Json.encodeToString(value))
+        bundle.putParcelable(key, value)
     }
 }
