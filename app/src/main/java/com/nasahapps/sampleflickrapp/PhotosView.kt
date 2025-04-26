@@ -69,6 +69,8 @@ fun PhotosView(
         }
     }
 
+    // This LaunchedEffect fixes an issue on older versions of Android
+    // where upon opening the app, the search bar would sometimes immediately gain focus
     LaunchedEffect(isSearchBarFocusable) {
         if (!isSearchBarFocusable) {
             delay(500)
